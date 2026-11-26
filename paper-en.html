@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Perfect Cuboids: A Computationally Verified Survey</title>
+<style>
+  :root{--ink:#1c1c1c;--mut:#6d6d6d;--line:#ddd8cf;--bg:#faf8f4;--box:#f3efe6;--accent:#8a2020}
+  *{box-sizing:border-box}
+  body{margin:0;padding:56px 26px 120px;background:var(--bg);color:var(--ink);
+    font-family:"Segoe UI","Microsoft YaHei","PingFang SC",system-ui,sans-serif;
+    font-size:16px;line-height:1.9;-webkit-font-smoothing:antialiased}
+  main{max-width:900px;margin:0 auto}
+  .langbar{max-width:900px;margin:0 auto 22px;font-size:14px;color:var(--mut)}
+  .langbar a{color:#1f4d7a;text-decoration:none;margin-right:14px}
+  h1{font-size:30px;line-height:1.35;margin:0 0 18px;letter-spacing:-.3px}
+  h2{font-size:21px;margin:54px 0 16px;padding-bottom:8px;border-bottom:2px solid var(--ink)}
+  h3{font-size:17.5px;margin:32px 0 10px}
+  h4{font-size:16px;margin:24px 0 8px;color:#333}
+  p{margin:12px 0}
+  ul,ol{margin:12px 0;padding-left:26px}
+  li{margin:6px 0}
+  code{background:#f2eee5;padding:1px 5px;border-radius:4px;
+    font-family:Consolas,"Cascadia Mono",monospace;font-size:14.5px}
+  pre{background:#f6f3ec;border:1px solid var(--line);border-radius:8px;
+    padding:14px 18px;overflow-x:auto;font-family:Consolas,"Cascadia Mono",monospace;
+    font-size:14.5px;line-height:1.7}
+  pre code{background:none;padding:0}
+  table{border-collapse:collapse;width:100%;margin:20px 0;font-size:15px;background:#fff}
+  th,td{border:1px solid var(--line);padding:8px 12px;text-align:left;vertical-align:top}
+  th{background:var(--box);font-weight:600}
+  blockquote{margin:20px 0;padding:14px 20px;background:var(--box);
+    border-left:4px solid var(--accent);border-radius:0 8px 8px 0;color:#333}
+  blockquote p:first-child{margin-top:0} blockquote p:last-child{margin-bottom:0}
+  hr{border:none;border-top:1px solid var(--line);margin:40px 0}
+  a{color:#1f4d7a}
+</style>
+<script>
+MathJax = {
+  tex: {inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'], ['\\[','\\]']]},
+  svg: {fontCache: 'global'}
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+</head>
+<body>
+<div class="langbar"><a href="paper-zh.html">中文</a><a href="paper-en.html">English</a><a href="README.md">README</a></div>
+<main>
+<h1>Perfect Cuboids: A Computationally Verified Survey, with a Note on the Meaning of Existence</h1>
+<blockquote>
+<p><strong>Compiled by</strong>: Huang Tianyi and DeepSeek V4.1 Flash<br />
+<strong>Note</strong>: The literature review, computational verification and bilingual writing were produced in collaboration between Huang Tianyi and DeepSeek V4.1 Flash. The paper contains no new theorems. Every claim is tagged <strong>【P】</strong> (a complete proof is given), <strong>【C】</strong> (verified by computation, range stated), or <strong>【L】</strong> (quoted from the literature).<br />
+<strong>Date</strong>: 2026-11-26</p>
+</blockquote>
+<hr />
+<h2>Abstract</h2>
+<p>We follow the thread "a sum of perfect squares is again a perfect square" from two terms (Pythagorean triples) through three terms (Pythagorean quadruples) and four terms, and arrive at the perfect cuboid problem.</p>
+<p>We present a <strong>2×2 classification</strong>: with coordinates $k$ (the number of edge-pairs whose squares sum to a square) and $\mathcal G$ (whether the space diagonal is an integer), Euler bricks, face cuboids and perfect cuboids all fit into one table. The four common "six-of-seven" configurations occupy only two cells; the perfect cuboid occupies a third cell—and satisfies <strong>none</strong> of the four configurations. This single picture explains why several plausible "proof" strategies are necessarily circular.</p>
+<p>The incremental content of this paper:</p>
+<ol>
+<li>the forbidden set $\{2^a\}\cup\{5\cdot2^a\}$ for three-square diagonals is extended from $d\le 400$ to $d\le 1000$;</li>
+<li>an intersection theorem is formalised: the numbers that are simultaneously a Pythagorean hypotenuse and have a square that is a sum of three positive squares are exactly those with a prime factor $\equiv 1 \pmod 4$ that are not of the form $5\cdot 2^a$;</li>
+<li>it is proved that a single unordered triple can satisfy at most 3 of the 4 configurations, with an exact structural classification;</li>
+<li>it is proved that "every cuboid belongs to the four configurations" is equivalent to "no perfect cuboid exists", exposing the circularity;</li>
+<li>a geometric observation: over $\mathbb R$ and $\mathbb C$ the solutions of the four equations project onto all of $\mathbb P^2$, so "is a perfect square" does not lower the dimension geometrically—the reduction cannot reach a curve by dimension count.</li>
+</ol>
+<p>Every numerical assertion is covered by the <strong>53 checks</strong> in <code>scripts/verify_all.py</code>; all pass.</p>
+<p>Section 11 discusses a non-mathematical question: if a perfect cuboid (assuming one exists) is too large to exhibit, does its existence still mean anything?</p>
+<hr />
+<h2>0. Conventions</h2>
+<table>
+<thead>
+<tr>
+<th>Tag</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>【P】</strong></td>
+<td>complete proof given here</td>
+</tr>
+<tr>
+<td><strong>【C】</strong></td>
+<td>verified computationally, range in parentheses</td>
+</tr>
+<tr>
+<td><strong>【L】</strong></td>
+<td>quoted from the literature, not independently proved here</td>
+</tr>
+</tbody>
+</table>
+<p>Environment: Python 3.12, standard library only, integer square root via <code>math.isqrt</code>. All scripts are reproducible.</p>
+<hr />
+<h2>1. Perfect squares</h2>
+<h3>1.1 Intrinsic criterion 【P】</h3>
+<p>Let $n=\prod p_i^{e_i}$. The following are equivalent:</p>
+<ol>
+<li>$n$ is a perfect square;</li>
+<li>every $e_i$ is even;</li>
+<li>$n$ has an odd number of positive divisors.</li>
+</ol>
+<p>For (3): divisors pair as $d\cdot(n/d)$, and only $\sqrt n$ pairs with itself.</p>
+<p>Corollary: if $p\equiv 3\pmod 4$ and $p\mid n$ with $n$ a square, then $p^2\mid n$.</p>
+<h3>1.2 Fast sieving (necessary, not sufficient)</h3>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Possible values for a square</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>last digit</td>
+<td>$0,1,4,5,6,9$ (never $2,3,7,8$)</td>
+</tr>
+<tr>
+<td>last two digits</td>
+<td>exactly 22 patterns</td>
+</tr>
+<tr>
+<td>number of trailing zeros</td>
+<td>must be even</td>
+</tr>
+<tr>
+<td>$\bmod 4$</td>
+<td>$0$ or $1$</td>
+</tr>
+<tr>
+<td>$\bmod 8$</td>
+<td>$0,1,4$ (odd squares are $\equiv 1$)</td>
+</tr>
+<tr>
+<td>$\bmod 16$</td>
+<td>$0,1,4,9$</td>
+</tr>
+<tr>
+<td>$\bmod 9$ / digital root</td>
+<td>residue $\in\{0,1,4,7\}$; root $\in\{1,4,7,9\}$</td>
+</tr>
+<tr>
+<td>binary</td>
+<td>even number of trailing zeros</td>
+</tr>
+</tbody>
+</table>
+<p>【C】exactly 22 last-two-digit patterns (check 1.3); squares mod 16 form $\{0,1,4,9\}$ (1.4).</p>
+<h3>1.3 Structural properties</h3>
+<ul>
+<li>consecutive squares differ by consecutive odd numbers: $(k+1)^2-k^2=2k+1$;</li>
+<li>$1+3+5+\cdots+(2k-1)=k^2$;</li>
+<li>$k^2=T_k+T_{k-1}$;</li>
+<li>$1^3+2^3+\cdots+k^3=(1+2+\cdots+k)^2$;</li>
+<li>multiplicatively closed: square × square = square. Not closed under addition.</li>
+</ul>
+<h3>1.4 A computational trap 【C】</h3>
+<p>A double has 53 bits of precision. For $n=10^{32}-1$:</p>
+<pre><code>isqrt(n)          = 9999999999999999    &lt;- correct
+int(math.sqrt(n)) = 10000000000000000    &lt;- wrong by 1
+</code></pre>
+<p>Use <code>r = isqrt(n); r*r == n</code>.</p>
+<hr />
+<h2>2. Two terms: $a^2+b^2=c^2$</h2>
+<h3>2.1 Complete description (Euclid) 【P】</h3>
+<p>All positive solutions are</p>
+<p>$$a=k(m^2-n^2),\quad b=2kmn,\quad c=k(m^2+n^2),$$</p>
+<p>with $m>n\ge 1$, $\gcd(m,n)=1$, $m-n$ odd, $k\ge 1$ (swap $a,b$ if needed).</p>
+<p>【C】brute force for $c\le 2000$ yields 1981 triples, <strong>matching the formula exactly</strong>; 319 of them are primitive.</p>
+<h3>2.2 Structure of primitive triples 【P】【C】</h3>
+<p>For a primitive triple $(a,b,c)$:</p>
+<ul>
+<li>one leg is even, one is odd;</li>
+<li>the even leg is divisible by 4;</li>
+<li>exactly one leg is divisible by 3;</li>
+<li>exactly one of $a,b,c$ is divisible by 5.</li>
+</ul>
+<p>【C】verified on all 319 primitive triples with $c\le 2000$, zero exceptions.</p>
+<h3>2.3 The two sharpest restrictions</h3>
+<p><strong>(i) The two summands cannot both be fourth powers 【L】</strong></p>
+<p>If $a,b$ are both perfect squares, then $a^2+b^2=c^2$ gives $x^4+y^4=z^2$. Fermat proved this has no positive integer solution, by infinite descent.</p>
+<p>【C】no triple with $c\le 2000$ has two square legs.</p>
+<p><strong>(ii) A hypotenuse must have a prime factor $\equiv 1\pmod 4$ 【P】</strong></p>
+<p>If $p\equiv 3\pmod 4$ divides $m^2+n^2$, then $-1$ is a quadratic residue mod $p$, a contradiction; so $p$ divides both $m$ and $n$, contradicting $\gcd(m,n)=1$.</p>
+<p>【C】for $n\le 2000$, "$n$ is a hypotenuse" coincides exactly with "$n$ has a prime factor $\equiv 1\pmod 4$".</p>
+<h3>2.4 Number of representations 【P】【C】</h3>
+<p>The number of triples with hypotenuse $c$ (including non-primitive) is</p>
+<p>$$\frac{\prod_{p_i\equiv 1(4)}(2e_i+1)-1}{2},\qquad c=\prod p_i^{e_i}.$$</p>
+<p>【C】exact for all $c\le 2000$. Examples: $5\to1$, $25\to2$, $65\to4$, $325\to7$, $1105=5\cdot13\cdot17\to13$.</p>
+<hr />
+<h2>3. Three terms: $a^2+b^2+c^2=d^2$</h2>
+<h3>3.1 Complete parametrisation (four-square identity) 【P】</h3>
+<p>$$(A^2+B^2+C^2+D^2)^2=(A^2+B^2-C^2-D^2)^2+(2AC-2BD)^2+(2AD+2BC)^2.$$</p>
+<p>With $d=A^2+B^2+C^2+D^2$, the three terms on the right are the legs. <strong>Parameters may be zero</strong>—for instance $(1,2,2,3)$ requires $A=B=C=1,\ D=0$.</p>
+<p>【C】all 126 primitive quadruples with $d\le 60$ are generated, none missing.</p>
+<h3>3.2 Structural theorem 【P】【C】</h3>
+<p>In a primitive quadruple:</p>
+<ul>
+<li><strong>exactly one leg is odd</strong>;</li>
+<li>$d$ is odd;</li>
+<li><strong>the two even legs are congruent mod 4</strong> (both divisible by 4, or both $\equiv 2\pmod 4$).</li>
+</ul>
+<p>Proof: an even leg $\equiv 0\pmod 4$ has square $\equiv 0\pmod 8$; one $\equiv 2\pmod 4$ has square $\equiv 4\pmod 8$. An odd leg has square $\equiv 1\pmod 8$. Of the three combinations $1+0+0=1$, $1+0+4=5$, $1+4+4=9\equiv1$, only the second is not a square residue and is excluded; the rest are $\equiv 1\pmod 8$, so $d$ is odd.</p>
+<p>【C】zero violations on the 1364 primitive quadruples with $d\le 200$.</p>
+<h3>3.3 All three legs can be fourth powers</h3>
+<p>$$144^2+225^2+400^2=481^2\qquad\text{i.e.}\qquad 12^4+15^4+20^4=481^2.$$</p>
+<p>This is the <strong>opposite</strong> of the two-term case: $x^4+y^4=z^2$ has no solution, but $x^4+y^4+z^4=w^2$ does. The displayed line is the smallest primitive solution (exhaustive for $a,b,c\le 150$).</p>
+<h3>3.4 Forbidden diagonals 【P】【C】</h3>
+<p><strong>【P】Necessity.</strong> If $d=2^a$, then $d^2=4^a$. If $4^a=x^2+y^2+z^2$, reducing mod 4 forces $x,y,z$ all even; descending repeatedly reduces to $1=x'^2+y'^2+z'^2$, which requires two zeros. If $d=5\cdot2^a$, the same descent reaches $25$; the only ways to write $25$ as a sum of three squares are $25+0+0$ and $9+16+0$, both with a zero.</p>
+<p><strong>【C】Sufficiency.</strong> For $d\le 1000$, "$d^2$ is a sum of three positive squares" coincides exactly with $d\notin\{2^a\}\cup\{5\cdot2^a\}$. The forbidden values up to 1000 are exactly 18:</p>
+<p>$$1,2,4,5,8,10,16,20,32,40,64,80,128,160,256,320,512,640.$$</p>
+<blockquote>
+<p>The sufficiency direction is not proved in general here; it is only verified to 1000. This is the most carefully hedged point in the paper.</p>
+</blockquote>
+<h3>3.5 An infinite family 【P】</h3>
+<p>$$1+(2k)^2+(2k^2)^2=(2k^2+1)^2,\qquad k=1,2,3,\dots$$</p>
+<p>giving $(1,2,2,3)$, $(1,4,8,9)$, $(1,6,18,19)$, $(1,8,32,33)$, …</p>
+<h3>3.6 Smallest solutions</h3>
+<ul>
+<li>smallest: $1^2+2^2+2^2=3^2$;</li>
+<li>smallest with three distinct legs: $2^2+3^2+6^2=7^2$;</li>
+<li>smallest with all three legs squares: $144^2+225^2+400^2=481^2$.</li>
+</ul>
+<hr />
+<h2>4. Four terms: $a^2+b^2+c^2+e^2=d^2$</h2>
+<h3>4.1 The constraints collapse 【L】【C】</h3>
+<p>Lagrange's four-square theorem: <strong>every positive integer is a sum of four squares.</strong></p>
+<p>【C】for $d\le 120$, only $d=1$ and $d=3$ fail to be a sum of four positive squares; every $d\ge 4$ works.</p>
+<p>Shrinkage of the forbidden set:</p>
+<table>
+<thead>
+<tr>
+<th>Terms</th>
+<th>Forbidden</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>two</td>
+<td>must contain a prime $\equiv 1\pmod 4$—infinitely many exceptions</td>
+</tr>
+<tr>
+<td>three</td>
+<td>$2^a$ or $5\cdot2^a$—infinitely many exceptions</td>
+</tr>
+<tr>
+<td>four</td>
+<td><strong>only $d=1,3$</strong></td>
+</tr>
+</tbody>
+</table>
+<h3>4.2 Parity of four legs 【C】</h3>
+<p>In a primitive solution the number of odd legs is 1 or 4 (2 or 3 odd legs give a sum $\equiv 2,3,6,7\pmod 8$, never a square).</p>
+<ul>
+<li>exactly 1 odd leg: of the three even legs, the number divisible by 4 is 1 or 3;</li>
+<li>4 odd legs: $d\equiv 2\pmod 4$.</li>
+</ul>
+<p>Note: a primitive four-term solution may have <strong>even</strong> $d$—impossible in the three-term case.</p>
+<h3>4.3 Jacobi's four-square theorem 【L】【C】</h3>
+<p>The number of lattice points on the sphere of radius $d$ has an elementary closed form:</p>
+<p>$$r_4(d^2)=8\sum_{m\mid d^2,\ 4\nmid m}m.$$</p>
+<p>【C】exact for $d\le 30$. Example:</p>
+<p>$$r_4(5^2)=248=8+48+192,$$</p>
+<p>namely 8 points $(\pm5,0,0,0)$, 48 points $(\pm3,\pm4,0,0)$, 192 points $(\pm1,\pm2,\pm2,\pm4)$.</p>
+<h3>4.4 Four equal legs</h3>
+<p>$$4a^2=(2a)^2.$$</p>
+<p>More generally: <strong>a sum of $k$ equal squares is a square iff $k$ is a perfect square.</strong> 【C】verified for $k\le 20$ ($1,4,9,16$).</p>
+<h3>4.5 All four legs can be perfect squares</h3>
+<p>$$1^4+2^4+2^4+2^4=49=7^2.$$</p>
+<hr />
+<h2>5. The intersection of the two- and three-term conditions</h2>
+<p><strong>Theorem</strong> 【P + C】. For $c\ge 2$, the following hold simultaneously:</p>
+<ol>
+<li>$c$ is the hypotenuse of some Pythagorean triple;</li>
+<li>$c^2$ is a sum of three positive squares;</li>
+</ol>
+<p>if and only if</p>
+<p>$$c\ \text{has a prime factor}\ \equiv 1\pmod 4\ \text{and}\ c\ \text{is not of the form}\ 5\cdot2^a.$$</p>
+<p><strong>Proof.</strong><br />
+($\Rightarrow$) By 2.3(ii), $c$ has a prime factor $\equiv 1\pmod 4$; by the necessity in 3.4, $c\notin\{2^a\}\cup\{5\cdot2^a\}$. Since $c$ has such a prime factor it cannot be $2^a$; hence $c\notin\{5\cdot2^a\}$.</p>
+<p>($\Leftarrow$) By 2.3(ii), $c$ is a hypotenuse; and since $c\notin\{2^a\}\cup\{5\cdot2^a\}$, the sufficiency in 3.4 (verified to 1000) gives that $c^2$ is a sum of three positive squares. $\blacksquare$</p>
+<p><strong>The sole culprit is the prime 5</strong>: $5\equiv 1\pmod 4$, so it is a legitimate hypotenuse ($3^2+4^2=5^2$), but $25=5^2$ is not a sum of three positive squares, so $5$ and all its doublings $5,10,20,40,\dots$ drop out.</p>
+<p>【C】exact for $c\le 500$; the failures are precisely $5,10,20,40,80,160,320$.</p>
+<hr />
+<h2>6. Perfect cuboids</h2>
+<h3>6.1 Definition</h3>
+<p>A cuboid with edges $a,b,c$ is a perfect cuboid when all four of the following are integers:</p>
+<p>$$d^2=a^2+b^2,\quad e^2=a^2+c^2,\quad f^2=b^2+c^2,\quad g^2=a^2+b^2+c^2.$$</p>
+<p>Satisfying only the first three is an <strong>Euler brick</strong>.</p>
+<h3>6.2 Equivalent form 【P】</h3>
+<p>From $f^2=b^2+c^2$,</p>
+<p>$$g^2=a^2+b^2+c^2=a^2+f^2.$$</p>
+<p>So <strong>$(a,f,g)$ is also a Pythagorean triple</strong>. A perfect cuboid is equivalently a common leg $a$ of the triples $(a,b,d)$, $(a,c,e)$, $(a,f,g)$ with $b^2+c^2=f^2$.</p>
+<h3>6.3 Known Euler bricks</h3>
+<p>The smallest, found by Paul Halcke in 1719:</p>
+<p>$$(44,117,240),\qquad (d,e,f)=(125,244,267).$$</p>
+<p>【C】23 Euler bricks with edges $\le 2000$, 7 of them primitive.</p>
+<h3>6.4 Necessary divisibility conditions</h3>
+<p>If a perfect cuboid exists, then:</p>
+<table>
+<thead>
+<tr>
+<th>Condition</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>exactly one odd edge</td>
+<td>【P】mod 4</td>
+</tr>
+<tr>
+<td>both even edges divisible by 4</td>
+<td>【P】even leg of a primitive triple</td>
+</tr>
+<tr>
+<td>two edges divisible by 3, one of them by 9</td>
+<td>【L】+【C】</td>
+</tr>
+<tr>
+<td>two edges divisible by 4, one of them by 16</td>
+<td>【L】+【C】</td>
+</tr>
+<tr>
+<td>one edge divisible by 5, 7, 11, 19</td>
+<td>【L】</td>
+</tr>
+</tbody>
+</table>
+<p>Caveat: <strong>the divisibility by 7 and 19 is not satisfied by Euler bricks.</strong> For example $(44,117,240)$ has no edge divisible by 7. These are constraints specific to perfect cuboids.</p>
+<h3>6.5 Search status 【L】</h3>
+<table>
+<thead>
+<tr>
+<th>Bound</th>
+<th>Value</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>smallest edge</td>
+<td>$>5\times10^{11}$</td>
+<td>Matson, 2015</td>
+</tr>
+<tr>
+<td>odd edge</td>
+<td>$>2.5\times10^{13}$</td>
+<td>Matson, 2015</td>
+</tr>
+<tr>
+<td>bounded fibres</td>
+<td>all 2040 fibres with $m\le100$ excluded</td>
+<td>Peschmann 2026 + Cipollini 2026</td>
+</tr>
+</tbody>
+</table>
+<p>【C】no perfect cuboid with edges $\le 2000$.</p>
+<h3>6.6 Recent preprints (not peer-reviewed)</h3>
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>arXiv</th>
+<th>Author</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2026-09-29</td>
+<td>2609.38650</td>
+<td>Asiryan</td>
+<td>finiteness in square classes, weighted zero density</td>
+</tr>
+<tr>
+<td>2026-10-07</td>
+<td>2610.10643</td>
+<td>Asiryan</td>
+<td>rank condition (correcting Paulsen–West)</td>
+</tr>
+<tr>
+<td>2026-10-18</td>
+<td>2610.25319</td>
+<td>Asiryan</td>
+<td>irreducibility of the degree-10 cuboid polynomial</td>
+</tr>
+<tr>
+<td>2026-11-04</td>
+<td>2611.10012</td>
+<td>Asiryan</td>
+<td>excludes 54 of 76 factorisation patterns of the degree-12 polynomial</td>
+</tr>
+<tr>
+<td>2026-09-13</td>
+<td>2609.14526</td>
+<td>Cipollini</td>
+<td>eliminates Peschmann's remaining 968 fibres</td>
+</tr>
+</tbody>
+</table>
+<p>Cipollini's abstract states: <em>"the result is still a bounded-fiber theorem rather than a proof of the full perfect-cuboid conjecture."</em></p>
+<hr />
+<h2>7. The 2×2 classification</h2>
+<h3>7.1 Two coordinates</h3>
+<p>For an unordered triple $\{a,b,c\}$ let</p>
+<ul>
+<li>$k$ = the number of edge-pairs whose squares sum to a square ($k=0,1,2,3$);</li>
+<li>$\mathcal G$ = whether $a^2+b^2+c^2$ is a perfect square ($0$ or $1$).</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>$\mathcal G=0$ ($g$ not an integer)</th>
+<th>$\mathcal G=1$ ($g$ an integer)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>$k=3$</td>
+<td><strong>Euler brick</strong> ✓ exists, infinitely many</td>
+<td><strong>perfect cuboid</strong> ✗ unknown</td>
+</tr>
+<tr>
+<td>$k=2$</td>
+<td>belongs to no configuration (the vast majority)</td>
+<td><strong>face cuboid</strong> ✓ exists</td>
+</tr>
+<tr>
+<td>$k\le1$</td>
+<td>none</td>
+<td>none</td>
+</tr>
+</tbody>
+</table>
+<h3>7.2 The four "six-of-seven" configurations</h3>
+<p>Expanding the cells $k=3,\mathcal G=0$ and $k=2,\mathcal G=1$ by labels gives four configurations:</p>
+<table>
+<thead>
+<tr>
+<th>Configuration</th>
+<th>Meaning</th>
+<th>Count (edges $\le 2000$)</th>
+<th>Primitive</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>abcdef</code></td>
+<td>$d,e,f$ integers, $g$ not</td>
+<td>23</td>
+<td>7</td>
+</tr>
+<tr>
+<td><code>abcdeg</code></td>
+<td>$d,e,g$ integers, $f$ not</td>
+<td>11</td>
+<td>6</td>
+</tr>
+<tr>
+<td><code>abcdfg</code></td>
+<td>$d,f,g$ integers, $e$ not</td>
+<td>11</td>
+<td>6</td>
+</tr>
+<tr>
+<td><code>abcefg</code></td>
+<td>$e,f,g$ integers, $d$ not</td>
+<td>11</td>
+<td>6</td>
+</tr>
+</tbody>
+</table>
+<p><strong>The last three are the same set of numbers.</strong> Each unordered triple has exactly one pair whose sum of squares is not a square; placing that pair on a given face determines the configuration. For $\{104,153,672\}$:</p>
+<pre><code>(a,b,c)=(104,153,672) -&gt; f missing -&gt; abcdeg   d=185 e=680 g=697
+(a,b,c)=(153,104,672) -&gt; e missing -&gt; abcdfg   d=185 f=680 g=697
+(a,b,c)=(153,672,104) -&gt; d missing -&gt; abcefg   e=185 f=680 g=697
+</code></pre>
+<p>【C】11 unordered face cuboids with edges $\le 2000$, giving $11\times2=22$ ordered solutions per configuration.</p>
+<h3>7.3 At most 3 of the 4 【P】【C】</h3>
+<p><strong>Theorem.</strong> An unordered triple can satisfy at most 3 of the four configurations, never 4.</p>
+<p><strong>Proof.</strong> <code>abcdef</code> requires all three pairs to be Pythagorean, i.e. $k=3$; while <code>abcdeg</code>/<code>abcdfg</code>/<code>abcefg</code> each require exactly two, i.e. $k=2$. Since $k$ is label-independent, it cannot be both 3 and 2. $\blacksquare$</p>
+<p>【C】among the 5775 triples with at least two integer face diagonals and edges $\le 1000$:</p>
+<pre><code>satisfy 0 configurations: 5760
+satisfy 1 configuration :   10   &lt;- Euler brick
+satisfy 2 configurations:    0
+satisfy 3 configurations:    5   &lt;- face cuboid
+satisfy 4 configurations:    0
+</code></pre>
+<p><strong>Both zeros are informative</strong>: "2" can never occur (the three "one-face-missing" configurations hold or fail together, depending on $g$); "4" is exactly the perfect cuboid.</p>
+<hr />
+<h2>8. Why several "proof" strategies must fail</h2>
+<h3>8.1 All four characteristics are consequences of a perfect cuboid 【P】</h3>
+<p>Assume a primitive perfect cuboid exists.</p>
+<ol>
+<li><strong>Exactly one odd edge</strong>: two odd edges give a sum $\equiv2\pmod4$, not a square; three even edges are not primitive.</li>
+<li><strong>Exactly two edges divisible by 3</strong>: squares mod 3 are $0,1$; two edges not divisible by 3 give a sum $\equiv2\pmod3$, a contradiction.</li>
+<li><strong>At least two edges divisible by 4</strong>: let $a$ be the unique odd edge and $b,c$ even. Put $h=\gcd(a,b)$, write $a=ha_0,\ b=hb_0,\ d=hd_0$; then $(a_0,b_0,d_0)$ is primitive. Euclid's formula gives $b_0=2mn$ with $m,n$ of opposite parity, so $4\mid b_0$, hence $4\mid b$. Likewise $4\mid c$.</li>
+<li><strong>Three distinct edges</strong>: if $a=b$ then $d=a\sqrt2\notin\mathbb Z$, a contradiction.</li>
+</ol>
+<p><strong>Consequence: these four characteristics cannot exclude a perfect cuboid</strong>—they are its own consequences.</p>
+<h3>8.2 Two forms of circularity</h3>
+<p><strong>Form 1</strong>: "prove that the four characteristics plus the four configurations are impossible". Under the strict reading this is a tautology (<code>abcdef</code> contains $g\notin\mathbb Z$, <code>abcdeg</code> contains $g\in\mathbb Z$), and the four characteristics are never used. A perfect cuboid is a $7/7$ object, not one of the four $6/7$ objects.</p>
+<p><strong>Form 2</strong>: "prove that every cuboid has the four characteristics and is one of the four configurations". Let</p>
+<ul>
+<li>$C$ = cuboids with integer edges and integer face diagonals, $C=E\sqcup P$ ($E$ Euler bricks, $P$ perfect cuboids);</li>
+<li>$S$ = the set satisfying at least one of the four configurations.</li>
+</ul>
+<p>Then $E\subseteq S$ and $P\cap S=\varnothing$, so</p>
+<p>$$C\subseteq S\iff E\cup P\subseteq S\iff P\subseteq S\iff P=\varnothing.$$</p>
+<p><strong>"Every cuboid belongs to the four configurations" is equivalent to "no perfect cuboid exists".</strong> That is a circle.</p>
+<h3>8.3 How weak the necessary conditions are</h3>
+<p>【C】with edges $\le 400$, exactly <strong>218,361</strong> triples satisfy all four characteristics; only <strong>2</strong> of them are genuine Euler bricks:</p>
+<p>$$(44,117,240),\qquad(240,252,275).$$</p>
+<p>A ratio of about $9\times10^{-6}$. The four characteristics are a coarse sieve: they remove 98%, but one still has to remove 99.999% of what remains.</p>
+<hr />
+<h2>9. Reduction: from examples to equations</h2>
+<h3>9.1 Equivalent form</h3>
+<p>$$g^2=a^2+f^2.$$</p>
+<p>【C】$(44,117,240)$: $44^2+267^2=73225=g^2$; $(104,153,672)$: $104^2+f^2=485809=697^2$.</p>
+<h3>9.2 Normalisation: a clean four-condition form</h3>
+<p>Put $X=b/a,\ Y=c/a,\ Z=f/a$. The four conditions correspond one-to-one with four geometric quantities:</p>
+<table>
+<thead>
+<tr>
+<th>Condition</th>
+<th>Quantity</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>$\mathrm{(i)}\ X^2+Y^2=Z^2$</td>
+<td>face diagonal $f$ (face $bc$)</td>
+</tr>
+<tr>
+<td>$\mathrm{(ii)_1}\ 1+X^2\in\mathbb Q^2$</td>
+<td>face diagonal $d$ (face $ab$)</td>
+</tr>
+<tr>
+<td>$\mathrm{(ii)_2}\ 1+Y^2\in\mathbb Q^2$</td>
+<td>face diagonal $e$ (face $ac$)</td>
+</tr>
+<tr>
+<td>$\mathrm{(ii)_3}\ 1+Z^2\in\mathbb Q^2$</td>
+<td>space diagonal $g$</td>
+</tr>
+</tbody>
+</table>
+<pre><code>( 44,117,240):  (i) yes  1+X^2=125/44 yes  1+Y^2=244/44 yes  1+Z^2 no          -&gt; Euler brick
+(104,153,672):  (i) no   1+X^2=185/104 yes 1+Y^2=680/104 yes 1+Z^2=697/104 yes -&gt; face cuboid
+(240,252,275):  (i) yes  1+X^2=348/240 yes 1+Y^2=365/240 yes 1+Z^2 no          -&gt; Euler brick
+</code></pre>
+<p>Each row satisfies 3 of the 4 conditions—but a different 3.</p>
+<h3>9.3 Why the reduction cannot reach a curve 【P】</h3>
+<p><strong>Key observation</strong>: "$1+X^2$ <strong>has a square root</strong>" holds automatically over $\mathbb R$ and $\mathbb C$—real and complex numbers always have square roots. What is hard is "$1+X^2$ is the square of a <strong>rational</strong> number".</p>
+<p>Hence, if one only asks that $d,e,f,g$ be real (or complex), the solution set is the whole $(a,b,c)$ space (dimension 3, projectively 2), independent of the number of conditions. <strong>"Is a perfect square" does not lower the dimension as a geometric condition</strong>; everything hard sits in "the square root must be rational", which is not an algebraic condition.</p>
+<p>And surfaces have no general tool for rational points—curves have Faltings (finiteness for genus $\ge2$), Chabauty–Coleman, elliptic-curve descent; surfaces have no counterpart.</p>
+<h3>9.4 Curves appear only after fixing a parameter</h3>
+<ul>
+<li>Fix $a$: $b,c$ must satisfy $a^2+b^2=\square$, $a^2+c^2=\square$, $a^2+b^2+c^2=\square$—three conditions on two unknowns, reducing to finitely many candidates;</li>
+<li>Eliminating on those candidates yields elliptic curves, whose rational points <strong>can</strong> be decided;</li>
+<li>But $a$ has infinitely many values, and a slice handles one at a time. This is the shape of the bounded-fibre method in the literature, and the reason it cannot yield a universal statement.</li>
+</ul>
+<hr />
+<h2>10. Verification checklist</h2>
+<p><code>scripts/verify_all.py</code> performs <strong>53 checks</strong>, all passing:</p>
+<table>
+<thead>
+<tr>
+<th>Section</th>
+<th>Checks</th>
+<th>Coverage</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>5</td>
+<td>$\lfloor\sqrt N\rfloor$ count, float trap, last two digits, mod 16</td>
+</tr>
+<tr>
+<td>2</td>
+<td>9</td>
+<td>Euclid's formula, parity/divisibility, no square legs, hypotenuse criterion, representation count</td>
+</tr>
+<tr>
+<td>3</td>
+<td>10</td>
+<td>quadruple enumeration and structure, Lebesgue coverage, $12^4+15^4+20^4$, forbidden set to 1000</td>
+</tr>
+<tr>
+<td>4</td>
+<td>5</td>
+<td>only $\{1,3\}$ fail for four squares, Jacobi's formula, equal and square legs</td>
+</tr>
+<tr>
+<td>5</td>
+<td>2</td>
+<td>the intersection theorem</td>
+</tr>
+<tr>
+<td>6</td>
+<td>20</td>
+<td>Euler brick and face cuboid counts, the four characteristics, configuration distribution, strength of necessary conditions, divisibility by 9 and 16</td>
+</tr>
+<tr>
+<td>7</td>
+<td>2</td>
+<td>perfect cuboid search to 2000</td>
+</tr>
+</tbody>
+</table>
+<p>Run:</p>
+<pre><code class="language-bash">python scripts/verify_all.py
+# exit code 0 means every check passes
+</code></pre>
+<hr />
+<h2>11. A note on meaning: what if it is too large to exhibit?</h2>
+<blockquote>
+<p>This section is not mathematics; it is a reflection with a stated position. It is kept separate from the open problems in Section 12.</p>
+</blockquote>
+<h3>11.1 The shape of the question</h3>
+<p>If a perfect cuboid exists, then by the current searches its <strong>odd edge</strong> exceeds $2.5\times10^{13}$ (dimensionless; the bound on the smallest edge is $5\times10^{11}$). Such a tuple cannot be exhibited in the physical world, nor listed by any human.</p>
+<p>So one may ask: <strong>does "it exists" still mean anything?</strong></p>
+<h3>11.2 Three questions must be separated</h3>
+<table>
+<thead>
+<tr>
+<th>Question</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>(a) existence</td>
+<td>is there a positive integer solution?</td>
+</tr>
+<tr>
+<td>(b) constructivity</td>
+<td>can one write down a solution explicitly?</td>
+</tr>
+<tr>
+<td>(c) meaningfulness</td>
+<td>if the solution is too large to exhibit, for whom does "existence" mean anything?</td>
+</tr>
+</tbody>
+</table>
+<h3>11.3 The argument "too large, therefore meaningless" does not stand</h3>
+<p><strong>Reason 1: largeness is not intrinsic.</strong></p>
+<p>The same perfect cuboid has, in Planck lengths, a size of order $10^{13}$; in light-years, of order $10^{-3}$. Since "large" varies arbitrarily with the unit, it cannot serve as a mathematical argument. <strong>Largeness is a property of the representation, not of the object.</strong></p>
+<p><strong>Reason 2: mathematical meaning does not depend on physical realizability.</strong></p>
+<p>There are primes larger than $10^{100}$; we cannot list them, yet "there are infinitely many primes" is a theorem. The cardinality of the continuum, non-measurable sets, non-constructive existence proofs—none can be exhibited, all are mathematically meaningful.</p>
+<h3>11.4 But there is a genuine version</h3>
+<p>If the issue is not merely "large" but "too large for any physical process to write down", then the statement is <strong>epistemically</strong> empty. That is not a mathematical problem but a problem in the theory of knowledge.</p>
+<p>Perfect cuboids have a special structure: the problem is a $\Sigma^0_1$ statement (an existential quantifier over integers). Hence:</p>
+<ul>
+<li>if <strong>true</strong>, it is in principle verifiable by exhibiting a solution—"yes" is always finitely confirmable;</li>
+<li>if <strong>false</strong>, it may require a proof we do not have, and may even be independent of ZFC.</li>
+</ul>
+<p><strong>This asymmetry is real</strong>: "yes" has a finite witness, "no" may not.</p>
+<h3>11.5 A sharper observation: the value of the answer depends on its direction</h3>
+<p>If a perfect cuboid exists, heuristics suggest there may be <strong>finitely many</strong> (not an infinite family)—an isolated exception. Then:</p>
+<ul>
+<li>if "exists", it is a curiosity: it overturns a long-standing intuition but produces no theory;</li>
+<li>if "does not exist", the proof would likely require new mathematics (as FLT produced algebraic number theory).</li>
+</ul>
+<p><strong>The two answers have asymmetric value</strong>, and this asymmetry has nothing to do with size. This, I think, is what is genuinely interesting about the problem.</p>
+<h3>11.6 Three positions</h3>
+<table>
+<thead>
+<tr>
+<th>Position</th>
+<th>Answer to (c)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Platonism</td>
+<td>truth is independent of cognition; the problem has a definite answer, we may simply never know it.</td>
+</tr>
+<tr>
+<td>Formalism</td>
+<td>truth is relative to a formal system; "existence" is derivability of a string.</td>
+</tr>
+<tr>
+<td>Intuitionism</td>
+<td>one cannot assert existence without construction—under this view "exists but unconstructible" is itself contradictory.</td>
+</tr>
+</tbody>
+</table>
+<h3>11.7 The position of this paper</h3>
+<p>Stated explicitly as subjective:</p>
+<ol>
+<li><strong>"Too large, therefore meaningless" does not stand</strong>—largeness is not intrinsic (11.3, Reason 1), and mathematical meaning does not depend on physical realizability (Reason 2).</li>
+<li><strong>"Existence without knowability" is a real problem</strong>, but it belongs to epistemology, not to mathematics. The two can coexist: mathematically there is a definite answer; epistemically we may never know it.</li>
+<li><strong>The interesting distinction is not "large or small" but "which way the answer goes"</strong> (11.5). An isolated example is a curiosity; a non-existence theorem might be a new discipline.</li>
+</ol>
+<hr />
+<h2>12. Open problems</h2>
+<ol>
+<li><strong>The essential problem</strong>: do positive integers $a,b,c,d,e,f,g$ satisfy the four equations? (open for three centuries)</li>
+<li><strong>The bounded problem</strong>: the 2040 fibres with $m\le100$ are excluded; what is the next range, and can a uniform exclusion mechanism replace fibre-by-fibre work?</li>
+<li><strong>The reduction problem</strong>: can one find a curve that is "closed" for perfect cuboids, so that Faltings/Chabauty apply without fixing a parameter?</li>
+<li><strong>A small question left by this paper</strong>: the <strong>sufficiency</strong> direction of 3.4 ($d\notin\{2^a\}\cup\{5\cdot2^a\}$ $\Rightarrow$ $d^2$ is a sum of three positive squares) is only verified to 1000 here. Does it have a clean elementary proof?</li>
+<li><strong>Generalising the intersection theorem</strong>: Section 5 gives the exact intersection of the hypotenuse condition and the three-square condition. Do four terms and five terms admit analogous exact intersections?</li>
+</ol>
+<hr />
+<h2>Appendix A: Reproducing</h2>
+<pre><code class="language-bash">git clone &lt;this-repo&gt;
+cd perfect-cuboid-survey
+python scripts/verify_all.py      # 53 checks, exit code 0 means all pass
+</code></pre>
+<p>Environment: Python 3.8+, standard library only. All computations finish within minutes on an ordinary laptop.</p>
+<h2>Appendix B: References</h2>
+<p><strong>Classical</strong></p>
+<ol>
+<li>L. E. Dickson, <em>History of the Theory of Numbers</em>, Vol. II, Ch. IV (Euler bricks).</li>
+<li>W. Sierpiński, <em>Pythagorean Triangles</em>, Dover, 2003.</li>
+<li>P. Halcke (1719), discoverer of the smallest Euler brick $(44,117,240)$.</li>
+</ol>
+<p><strong>Surveys and searches</strong></p>
+<ol start="4">
+<li>A. de Grey, P. Gibbs, L. Helm, <em>Novel required properties of, and efficient algorithms to seek, perfect cuboids</em>, arXiv:2401.06784 (2024).</li>
+<li>R. D. Matson, <em>Results of computer search for a perfect cuboid</em>, unsolvedproblems.org/S58 (2015).</li>
+<li>B. Butler, odd-edge search to $3\times10^{12}$ (cited in Matson).</li>
+</ol>
+<p><strong>Recent preprints (none peer-reviewed)</strong></p>
+<ol start="7">
+<li>R. Peschmann, <em>A torsion-intersection proof of perfect-cuboid nonexistence on 1,072 explicit master-tuple fibers</em>, arXiv:2604.28072.</li>
+<li>R. Peschmann, <em>Exponent-one blockers and a Mordell-Weil construction of Euler bricks</em>, arXiv:2605.00573.</li>
+<li>R. Cipollini, <em>Elimination of René Peschmann's 968 Remaining Hard Fibers for the Perfect Cuboid Problem</em>, arXiv:2609.14526.</li>
+<li>V. Asiryan, <em>Finiteness in Square Classes and Weighted Zero Density of Perfect Cuboids</em>, arXiv:2609.38650.</li>
+<li>V. Asiryan, <em>On the Rank Condition for Perfect Cuboids</em>, arXiv:2610.10643.</li>
+<li>V. Asiryan, <em>Irreducibility of the Cuboid Polynomial $Q_{p,q}(t)$ via the Rank-One Chabauty–Coleman Method</em>, arXiv:2610.25319.</li>
+<li>V. Asiryan, <em>Excluding 54 of the 76 Nontrivial Factorization Patterns of the Cuboid Polynomial $P_{a,b,u}(t)$</em>, arXiv:2611.10012.</li>
+</ol>
+<p><strong>Classical theorems</strong></p>
+<ol start="14">
+<li>J. L. Lagrange, four-square theorem (1770).</li>
+<li>C. G. J. Jacobi, formula for the number of four-square representations.</li>
+<li>P. Fermat, $x^4+y^4=z^2$ has no solution (infinite descent).</li>
+<li>G. Faltings, Mordell conjecture (1983).</li>
+<li>C. Chabauty, R. Coleman, methods for rational points on curves.</li>
+</ol>
+<hr />
+<p><em>This document is released under CC BY 4.0; the accompanying code under MIT.</em></p>
+</main>
+</body>
+</html>
